@@ -11,8 +11,8 @@ import type { RoomState, PipeConnection, ChaosEffect, CharacterState } from "./t
 
 const PERSON_HEAT_PER_10 = 0.02;
 const PERSON_AIR_DRAIN_PER_10 = 0.06;
-/** Zusaetzliche Waerme durch Rechner/Server – Computerraum braucht dauerhafte Kuehlung */
-const COMPUTER_HEAT_FACTOR = 0.25;
+/** Zusaetzliche Waerme durch Rechner/Server – Computerraum braucht dauerhafte Kuehlung (~10% weniger als vorher) */
+const COMPUTER_HEAT_FACTOR = 0.225;
 
 const BASE_PEOPLE: Record<RoomId, number> = {
   turnhalle: 25,

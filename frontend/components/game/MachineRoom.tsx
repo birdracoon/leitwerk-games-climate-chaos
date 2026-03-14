@@ -8,6 +8,7 @@ import { SYSTEM_NAMES } from "@/lib/constants";
 import { DEVICE_OVERLOAD_DURATION_MS, DEVICE_REPAIR_DURATION_MS, DEVICE_OVERLOAD_THRESHOLD } from "@/lib/constants";
 import type { SystemType } from "@/lib/constants";
 import { useDeviceTextures } from "@/lib/game/CharacterTextures";
+import { GAME_TEXT_STYLE } from "./Building";
 
 function DeviceSprite({
   texture,
@@ -219,30 +220,30 @@ export function MachineRoomDevices({ width, height }: { width: number; height: n
               }}
             />
             {remainingSec != null && remainingSec > 0 && (
-              <pixiContainer x={w / 2} y={-h * 0.25}>
+              <pixiContainer x={w / 2} y={-h * 0.4}>
                 <pixiText
-                  text="ÜBERLASTET!"
+                  text="⚠️ ÜBERLASTUNG ⚠️"
                   x={0}
                   y={0}
                   anchor={0.5}
-                  scale={0.95 + 0.1 * Math.abs(Math.sin(now / 200))}
                   style={{
-                    fontSize: Math.min(22, w * 0.18),
-                    fill: 0xf44336,
-                    fontWeight: "bold",
-                    dropShadow: { color: 0x000000, blur: 2, distance: 2 },
+                    ...GAME_TEXT_STYLE,
+                    fontSize: Math.min(28, w * 0.22),
+                    fill: 0xffffff,
+                    fontWeight: "900",
+                    stroke: { color: 0xff0000, width: 6 },
                   }}
                 />
                 <pixiText
-                  text={String(remainingSec)}
+                  text={`${remainingSec}s`}
                   x={0}
-                  y={28}
+                  y={35}
                   anchor={0.5}
-                  scale={0.95 + 0.1 * Math.abs(Math.sin(now / 200))}
                   style={{
-                    fontSize: Math.min(28, w * 0.2),
-                    fill: 0xf44336,
-                    dropShadow: { color: 0x000000, blur: 2, distance: 2 },
+                    ...GAME_TEXT_STYLE,
+                    fontSize: 32,
+                    fill: 0xffffff,
+                    stroke: { color: 0xff0000, width: 4 },
                   }}
                 />
               </pixiContainer>

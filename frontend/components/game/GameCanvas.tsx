@@ -5,6 +5,7 @@ import { Application, extend, useTick } from "@pixi/react";
 import { Container, Graphics, Text, Sprite, TilingSprite } from "pixi.js";
 import { useGameStore } from "@/lib/engine/GameState";
 import { BuildingBase, BuildingFurniture, BuildingCharacters, BuildingPanels, BuildingCriticalAlerts, BuildingTurboOverlay } from "./Building";
+import { GlobalAlarmVignette } from "./GlobalAlarmVignette";
 import { MachineRoomBackground, MachineRoomDevices } from "./MachineRoom";
 import { PipeSystem } from "./PipeSystem";
 import { DragPipe } from "./DragPipe";
@@ -40,6 +41,7 @@ function GameContent() {
         <BuildingPanels width={width} height={height} />
         <MachineRoomDevices width={width} height={height} />
         <DragPipe width={width} height={height} />
+        <GlobalAlarmVignette />
       </pixiContainer>
     </>
   );

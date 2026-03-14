@@ -448,11 +448,9 @@ export function BuildingTurboOverlay({ width, height }: { width: number; height:
               anchor={0.5}
               scale={scale}
               style={{
-                fontFamily: "Orbitron",
                 fontSize: 14,
                 fill: 0x4caf50,
                 fontWeight: "bold",
-                dropShadow: { color: 0x000000, blur: 4, distance: 2 },
                 ...GAME_TEXT_STYLE,
               }}
             />
@@ -556,7 +554,7 @@ export function Building({ width, height }: { width: number; height: number }) {
   );
 }
 
-const GAME_TEXT_STYLE = {
+export const GAME_TEXT_STYLE = {
   fontFamily: "Orbitron, sans-serif",
   dropShadow: { color: 0x000000, blur: 4, distance: 2 },
   letterSpacing: 1,

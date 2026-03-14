@@ -10,6 +10,8 @@ import { calculateWerkstaetteMachineLoad } from "@/lib/engine/EnergyManager";
 export function HUD() {
   const energyUsed = useGameStore((s) => s.energyUsed);
   const isBlackout = useGameStore((s) => s.isBlackout);
+  const deviceOverloadStart = useGameStore((s) => s.deviceOverloadStart);
+  const isAnyOverloaded = Object.values(deviceOverloadStart).some((v) => v !== null);
   const survivalTimeMs = useGameStore((s) => s.survivalTimeMs);
   const rooms = useGameStore((s) => s.rooms);
   const eff = useMemo(
@@ -54,7 +56,13 @@ export function HUD() {
           priority
         />
         <div className="flex items-center gap-2">
-          <span className="text-sm text-[var(--foreground)]">Energie:</span>
+          <span
+            className={`text-sm font-bold ${
+              isAnyOverloaded ? "text-red-400 animate-pulse" : "text-[var(--foreground)]"
+            }`}
+          >
+            {isAnyOverloaded ? "! SYSTEM-WARNUNG !" : "Energie:"}
+          </span>
           <div className="w-40 h-5 bg-[#374151] rounded overflow-hidden relative">
             <div
               className="absolute inset-0 bg-green-500/20"
