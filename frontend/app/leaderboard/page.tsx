@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { getLeaderboard } from "@/lib/api/client-proxy";
 import type { LeaderboardEntry } from "@/lib/api/client-proxy";
+import { BASE_PATH } from "@/lib/constants";
 
 export default function LeaderboardPage() {
   const [scores, setScores] = useState<LeaderboardEntry[]>([]);
@@ -52,7 +53,9 @@ export default function LeaderboardPage() {
                 <span className="flex-1 font-mono text-[var(--foreground)]">
                   {entry.playerName}
                 </span>
-                <span className="text-[#00c853] font-bold">{entry.totalScore}</span>
+                <span className="text-[#00c853] font-bold">
+                  {entry.totalScore}
+                </span>
                 <span className="text-sm text-[#6b7280]">
                   {Math.floor(entry.survivalTimeSeconds / 60)}:
                   {(entry.survivalTimeSeconds % 60).toString().padStart(2, "0")}
@@ -65,7 +68,7 @@ export default function LeaderboardPage() {
           Aktualisiert alle 5 Sekunden
         </p>
         <a
-          href="/"
+          href={BASE_PATH + "/"}
           className="block text-center mt-6 text-[#00c853] hover:underline"
         >
           ← Zurück zum Spiel
