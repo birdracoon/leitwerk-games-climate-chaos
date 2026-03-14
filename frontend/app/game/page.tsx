@@ -107,7 +107,7 @@ export default function GamePage() {
 
   const handleBackToHome = () => {
     useGameStore.getState().reset();
-    window.location.href = "/";
+    window.location.href = BASE_PATH + "/";
   };
 
   const handleSubmitScore = async () => {

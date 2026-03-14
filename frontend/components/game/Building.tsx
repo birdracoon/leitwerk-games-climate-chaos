@@ -243,10 +243,10 @@ export function BuildingBase({ width, height }: { width: number; height: number 
   const hasCritical = Object.values(rooms).some((r) => r?.criticalSince != null);
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    if (!hasCritical) return;
-    const id = setInterval(() => setNow(Date.now()), 150);
+    if (!hasCritical && !isBlackout) return;
+    const id = setInterval(() => setNow(Date.now()), 100);
     return () => clearInterval(id);
-  }, [hasCritical]);
+  }, [hasCritical, isBlackout]);
 
   return (
     <>
@@ -340,6 +340,18 @@ export function BuildingBase({ width, height }: { width: number; height: number 
                 }
               }}
             />
+            {isBlackout && (
+              <pixiGraphics
+                draw={(g: Graphics) => {
+                  const pulse = 0.3 + Math.abs(Math.sin(now / 400)) * 0.4;
+                  g.clear();
+                  g.circle(x + w - 15, y + 15, 20)
+                    .fill({ color: 0xff0000, alpha: pulse * 0.2 });
+                  g.circle(x + w - 15, y + 15, 4)
+                    .fill({ color: 0xff0000, alpha: pulse });
+                }}
+              />
+            )}
           </pixiContainer>
         );
       })}
@@ -385,7 +397,7 @@ export function BuildingCriticalAlerts({ width, height }: { width: number; heigh
         const fontSize = Math.min(28, w * 0.15);
         const scale = 0.95 + 0.1 * Math.abs(Math.sin(now / 150));
         return (
-          <pixiContainer key={`critical-${id}`} x={x + w / 2} y={y + h / 2 - 20}>
+          <pixiContainer key={`critical-${id}`} x={x + w / 2} y={y + h * 0.75}>
             <pixiText
               text={warnLabel}
               x={0}
@@ -393,24 +405,23 @@ export function BuildingCriticalAlerts({ width, height }: { width: number; heigh
               anchor={0.5}
               scale={scale}
               style={{
+                ...GAME_TEXT_STYLE,
                 fontSize,
                 fill: CRITICAL_VIGNETTE_COLORS[room.characterState] ?? 0xf44336,
-                fontWeight: "bold",
-                stroke: { color: 0x000000, width: 4 },
-                ...GAME_TEXT_STYLE,
+                fontWeight: "900",
+                stroke: { color: 0x000000, width: 6 },
               }}
             />
             <pixiText
               text={`${remainingSec}s`}
               x={0}
-              y={fontSize + 8}
+              y={30}
               anchor={0.5}
               style={{
-                fontSize: fontSize * 0.8,
-                fill: 0xffffff,
-                fontWeight: "bold",
-                stroke: { color: 0x000000, width: 3 },
                 ...GAME_TEXT_STYLE,
+                fontSize: Math.min(24, w * 0.12),
+                fill: 0xffffff,
+                stroke: { color: 0x000000, width: 4 },
               }}
             />
           </pixiContainer>

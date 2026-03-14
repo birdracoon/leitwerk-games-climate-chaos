@@ -66,7 +66,7 @@ export default function Home() {
             {loading ? "..." : "Spiel starten"}
           </button>
           <a
-            href="/leaderboard"
+            href={`${BASE_PATH}/leaderboard`}
             className="flex-1 py-3 border border-[#374151] text-[var(--foreground)] font-medium rounded-lg text-center hover:bg-[#1a1f26]"
           >
             Leaderboard
