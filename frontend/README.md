@@ -45,11 +45,13 @@ Spiel ohne Backend – alle Daten werden in der Browser-IndexedDB gespeichert. I
 **Schritte:**
 
 1. `.env.production` oder Build-Env setzen:
+
    ```
    NEXT_PUBLIC_STORAGE_MODE=local
    ```
 
 2. Build und Start:
+
    ```bash
    npm run build
    npm run start
@@ -70,6 +72,7 @@ Spiel mit persistenter Datenbank – Sessions und Scores werden im Backend gespe
 1. .NET-Backend starten (Port 5224).
 
 2. `.env.production` oder Build-Env:
+
    ```
    NEXT_PUBLIC_STORAGE_MODE=backend
    NEXT_PUBLIC_API_URL=https://deine-api.example.com
@@ -78,3 +81,41 @@ Spiel mit persistenter Datenbank – Sessions und Scores werden im Backend gespe
 3. Build und Start wie oben.
 
 **Hinweis:** `NEXT_PUBLIC_API_URL` muss zur Laufzeit erreichbar sein (CORS im Backend konfigurieren).
+
+---
+
+## Deployment per PowerShell auf STRATO
+
+Fuer Windows-Deployments liegt ein Skript unter `scripts/deploy-strato.ps1`.
+
+### Voraussetzungen
+
+- Lokaler OpenSSH-Client (`ssh`, `scp`) und `tar`
+- SSH-Zugang auf den Server
+- Node.js/NPM auf dem Zielserver
+
+### Beispielaufrufe
+
+Minimal:
+
+```powershell
+./scripts/deploy-strato.ps1
+```
+
+Mit SSH-Key/Zertifikat, Zielpfad und Service-Restart:
+
+```powershell
+./scripts/deploy-strato.ps1 `
+   -SshKeyPath C:\Users\du\.ssh\id_rsa `
+   -SshCertificatePath C:\Users\du\.ssh\id_rsa-cert.pub `
+   -RemoteAppDir /var/www/climate-chaos-frontend `
+   -ServiceName climate-chaos-frontend
+```
+
+Optional mit `nvm` auf dem Server:
+
+```powershell
+./scripts/deploy-strato.ps1 -UseNvm -NodeMajor 20
+```
+
+Das Skript erstellt ein Archiv ohne `node_modules`/`.next`, uebertraegt es auf den Server, fuehrt `npm ci` und `npm run build` aus, setzt den Symlink `current` auf das neue Release und behaelt die letzten 5 Releases.

@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import Image from "next/image";
 import { useGameStore } from "@/lib/engine/GameState";
-import { MAX_ENERGY } from "@/lib/constants";
+import { MAX_ENERGY, BASE_PATH } from "@/lib/constants";
 import { calculateEfficiencyQuotient, calculateTotalScore } from "@/lib/engine/ScoreCalculator";
 import { calculateWerkstaetteMachineLoad } from "@/lib/engine/EnergyManager";
 
@@ -46,7 +46,7 @@ export function HUD() {
     >
       <div className="flex items-center gap-6">
         <Image
-          src="/logo-claim-dark.svg"
+          src={`${BASE_PATH}/logo-claim-dark.svg`}
           alt="Leitwerk"
           width={140}
           height={32}

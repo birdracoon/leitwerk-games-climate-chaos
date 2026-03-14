@@ -8,14 +8,18 @@ export function NameGenerator({
 }: {
   onNameChange: (name: string) => void;
 }) {
-  const [adjective, setAdjective] = useState(() =>
-    ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)]
-  );
-  const [noun, setNoun] = useState(() =>
-    NOUNS[Math.floor(Math.random() * NOUNS.length)]
-  );
+  const [adjective, setAdjective] = useState(ADJECTIVES[0]);
+  const [noun, setNoun] = useState(NOUNS[0]);
 
   const fullName = `${adjective}_${noun}`;
+
+  useEffect(() => {
+    const randomAdjective = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
+    const randomNoun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
+    setAdjective(randomAdjective);
+    setNoun(randomNoun);
+    onNameChange(`${randomAdjective}_${randomNoun}`);
+  }, []);
 
   useEffect(() => {
     onNameChange(fullName);

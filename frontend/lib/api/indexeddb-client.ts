@@ -25,8 +25,19 @@ function openDb(): Promise<IDBDatabase> {
   });
 }
 
+function generateUUID(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  // Fallback for non-secure contexts (HTTP)
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
+  });
+}
+
 export async function createSession(playerName: string): Promise<SessionResponse> {
-  const token = crypto.randomUUID();
+  const token = generateUUID();
   const db = await openDb();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_SESSIONS, "readwrite");

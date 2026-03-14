@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { NameGenerator } from "@/components/registration/NameGenerator";
 import { createSession } from "@/lib/api/client-proxy";
+import { BASE_PATH } from "@/lib/constants";
 
 export default function Home() {
   const [playerName, setPlayerName] = useState("Frostiger_Taschenrechner");
@@ -19,12 +20,13 @@ export default function Home() {
       const { token } = await createSession(playerName);
       sessionStorage.setItem("leitwerk_token", token);
       sessionStorage.setItem("leitwerk_player", playerName);
-      router.push("/game");
-    } catch {
-      setError("Verbindung fehlgeschlagen. Bitte Backend starten.");
-    } finally {
+    } catch (err) {
+      setError(`Verbindung fehlgeschlagen: ${err instanceof Error ? err.message : String(err)}`);
       setLoading(false);
+      return;
     }
+    setLoading(false);
+    router.push("/game");
   };
 
   return (
@@ -32,7 +34,7 @@ export default function Home() {
       <main className="w-full max-w-md">
         <div className="flex justify-center mb-4">
           <Image
-            src="/logo-claim-dark.svg"
+            src={`${BASE_PATH}/logo-claim-dark.svg`}
             alt="Leitwerk"
             width={320}
             height={73}

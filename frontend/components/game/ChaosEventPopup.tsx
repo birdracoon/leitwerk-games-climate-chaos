@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useGameStore } from "@/lib/engine/GameState";
+import { BASE_PATH } from "@/lib/constants";
 
 function getEventStyle(e: { effect: { systemOutage?: unknown; temperature?: number; airQuality?: number } }) {
   if (e.effect.systemOutage) {
@@ -29,7 +30,7 @@ export function ChaosEventPopup() {
           className={`${getEventStyle(e)} px-4 py-3 rounded-xl shadow-lg flex items-center gap-3`}
         >
           <Image
-            src="/logo-claim-dark.svg"
+            src={`${BASE_PATH}/logo-claim-dark.svg`}
             alt=""
             width={24}
             height={24}

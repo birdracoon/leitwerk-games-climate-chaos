@@ -1,3 +1,5 @@
+export const BASE_PATH = "/climate-chaos";
+
 export const ROOM_IDS = [
   "turnhalle",
   "computerraum",

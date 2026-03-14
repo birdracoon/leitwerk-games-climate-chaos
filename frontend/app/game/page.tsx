@@ -11,7 +11,7 @@ import { MiniLeaderboard } from "@/components/game/MiniLeaderboard";
 import { useGameStore } from "@/lib/engine/GameState";
 import { createSession, startGame, submitScore } from "@/lib/api/client-proxy";
 import { calculateEfficiencyQuotient } from "@/lib/engine/ScoreCalculator";
-import { MAX_ENERGY, ROOM_NAMES } from "@/lib/constants";
+import { MAX_ENERGY, ROOM_NAMES, BASE_PATH } from "@/lib/constants";
 import type { RoomId } from "@/lib/constants";
 
 const GAME_OVER_FLAVOR: Record<string, string> = {
@@ -141,7 +141,7 @@ export default function GamePage() {
           <div className="bg-[#1a1f26] p-8 rounded-xl max-w-md text-center border-2 border-red-500 animate-pulse-red shadow-2xl">
             <div className="flex justify-center mb-6">
               <Image
-                src="/logo-claim-dark.svg"
+                src={`${BASE_PATH}/logo-claim-dark.svg`}
                 alt="Leitwerk"
                 width={160}
                 height={36}
@@ -155,7 +155,7 @@ export default function GamePage() {
               Die Haustechnik-Planer haben die Klimatechnik und Lüftungstechnik etwas zu kanpp bemessen...
             </p>
             <p className="text-[var(--foreground)] text-sm mb-1 opacity-0 animate-fade-in-up" style={{ animationDelay: "0.6s", animationFillMode: "forwards" }}>
-              ...und heute ist Tag der offenen Tuer. 
+              ...und heute ist Tag der offenen Tuer.
             </p>
             <p className="text-[#00c853] text-sm font-medium mb-2 opacity-0 animate-fade-in-up" style={{ animationDelay: "0.9s", animationFillMode: "forwards" }}>
               Jetzt haengt alles von dir ab.
@@ -181,7 +181,7 @@ export default function GamePage() {
           <div className="bg-[#1a1f26] p-8 rounded-lg max-w-md text-center">
             <div className="flex justify-center mb-4">
               <Image
-                src="/logo-claim-dark.svg"
+                src={`${BASE_PATH}/logo-claim-dark.svg`}
                 alt="Leitwerk"
                 width={80}
                 height={18}
