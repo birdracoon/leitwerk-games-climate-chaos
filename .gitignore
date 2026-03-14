@@ -1,0 +1,139 @@
+# ============================================================
+# .NET / C#
+# ============================================================
+
+## Build output
+bin/
+obj/
+out/
+
+## Visual Studio files
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+## Rider
+.idea/
+*.DotSettings.user
+
+## NuGet
+*.nupkg
+*.snupkg
+**/[Pp]ackages/
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## OS-generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+
+## Test results
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+
+## Publish output
+publish/
+
+## dotnet tool manifests
+.config/dotnet-tools.json
+
+## Environment / secrets
+appsettings.*.json
+!appsettings.json
+!appsettings.Development.json
+
+# ============================================================
+# Node.js / React / Next.js
+# ============================================================
+
+## Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+## Next.js build output
+frontend/.next/
+frontend/out/
+
+## Production build
+frontend/build/
+frontend/dist/
+
+## Cache
+.npm
+.eslintcache
+.turbo
+.parcel-cache
+*.tsbuildinfo
+next-env.d.ts
+
+## Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+## Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+## Vercel / deployment
+.vercel
+
+## Testing
+coverage/
+
+# ============================================================
+# Unused public assets
+# ============================================================
+
+## kenney_generic-items – komplett ungenutzt
+frontend/public/kenney_generic-items/
+
+## kenney_platformer-characters – alle Limbs-Ordner ungenutzt
+frontend/public/kenney_platformer-characters/PNG/*/Limbs/
+
+## kenney_platformer-characters – Root-Level Tilesheet-Dateien (z.B. zombie_tilesheet.png)
+frontend/public/kenney_platformer-characters/PNG/*/*.png
+
+## kenney_platformer-characters – aus Poses/ wird nur *_idle.png genutzt
+frontend/public/kenney_platformer-characters/PNG/*/Poses/*
+!frontend/public/kenney_platformer-characters/PNG/*/Poses/*_idle.png
+
+## kenney_roguelike-indoors – nur roguelikeIndoor_transparent.png wird genutzt
+frontend/public/kenney_roguelike-indoors/Kenney.url
+frontend/public/kenney_roguelike-indoors/Patreon.url
+frontend/public/kenney_roguelike-indoors/Preview.png
+frontend/public/kenney_roguelike-indoors/Sample.png
+frontend/public/kenney_roguelike-indoors/Tilesheets/roguelikeIndoor_magenta.png
+frontend/public/kenney_roguelike-indoors/Tilesheets/tilesheetInfo.txt
+
+## textures – nur floor_tile.png wird referenziert, alle anderen Ordner ungenutzt
+frontend/public/textures/README.md
+frontend/public/textures/PNG/
+frontend/public/textures/Spritesheets/
+frontend/public/textures/Vector/
+
+# ============================================================
+# General
+# ============================================================
+
+*.log
+*.tmp
+*.bak
+*.swp
+*~
