@@ -420,6 +420,49 @@ export function BuildingCriticalAlerts({ width, height }: { width: number; heigh
   );
 }
 
+export function BuildingTurboOverlay({ width, height }: { width: number; height: number }) {
+  const rooms = useGameStore((s) => s.rooms);
+  const isTurboActive = useGameStore((s) => s.isTurboActive);
+  const layout = useMemo(() => getRoomLayout(width, height), [width, height]);
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!isTurboActive) return;
+    const id = setInterval(() => setNow(Date.now()), 100);
+    return () => clearInterval(id);
+  }, [isTurboActive]);
+
+  if (!isTurboActive) return null;
+
+  return (
+    <>
+      {layout.map(({ id, x, y, w, h }) => {
+        const room = rooms[id];
+        if (!room || room.airQuality >= 50) return null;
+        const scale = 0.95 + 0.08 * Math.abs(Math.sin(now / 150));
+        return (
+          <pixiContainer key={`turbo-${id}`} x={x + w / 2} y={y + h - 20}>
+            <pixiText
+              text="TURBO-LÜFTUNG AKTIV"
+              x={0}
+              y={0}
+              anchor={0.5}
+              scale={scale}
+              style={{
+                fontFamily: "Orbitron",
+                fontSize: 14,
+                fill: 0x4caf50,
+                fontWeight: "bold",
+                dropShadow: { color: 0x000000, blur: 4, distance: 2 },
+                ...GAME_TEXT_STYLE,
+              }}
+            />
+          </pixiContainer>
+        );
+      })}
+    </>
+  );
+}
+
 export function BuildingFurniture({ width, height }: { width: number; height: number }) {
   const layout = useMemo(() => getRoomLayout(width, height), [width, height]);
 

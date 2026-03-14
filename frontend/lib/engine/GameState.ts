@@ -23,6 +23,9 @@ import {
   DEVICE_OVERLOAD_DURATION_MS,
   DEVICE_REPAIR_DURATION_MS,
   SYSTEM_TYPES,
+  TURBO_AIR_THRESHOLD,
+  TURBO_DURATION_MS,
+  TURBO_MULTIPLIER,
 } from "../constants";
 import type {
   GameState as GameStateType,
@@ -85,6 +88,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   nextChaosAt: 0,
   dragState: null,
   selectedMachine: null,
+  isTurboActive: false,
+  turboTimer: 0,
 
   selectMachine: (system) => {
     set({ selectedMachine: system });
@@ -180,6 +185,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       startTime: null,
       nextChaosAt: 0,
       selectedMachine: null,
+      isTurboActive: false,
+      turboTimer: 0,
     });
   },
 
@@ -198,6 +205,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       brokenDevices,
       deviceRepairStart,
       nextChaosAt,
+      isTurboActive,
+      turboTimer,
     } = state;
 
     const now = Date.now();
@@ -261,6 +270,22 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     const effectiveOutages = new Set([...systemOutages, ...brokenDevices]);
 
+    // Turbo-Lüftung: Auto-Aktivierung bei kritischer Luftqualität (nur wenn Strom)
+    let newTurboActive = isTurboActive;
+    let newTurboTimer = turboTimer;
+    const criticalAir = !isBlackout && Object.values(rooms).some((r) => r.airQuality < TURBO_AIR_THRESHOLD);
+    if (criticalAir && !newTurboActive && newTurboTimer <= 0) {
+      newTurboActive = true;
+      newTurboTimer = TURBO_DURATION_MS;
+    }
+    if (newTurboActive) {
+      newTurboTimer -= deltaMs;
+      if (newTurboTimer <= 0) {
+        newTurboActive = false;
+      }
+    }
+    const turboMultiplier = newTurboActive ? TURBO_MULTIPLIER : 1;
+
     const energyUsed = isBlackout ? 0 : calculateEnergyUsed(connections, rooms);
     if (!isBlackout) {
       if (isOverloaded(energyUsed)) {
@@ -286,7 +311,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
             chaosEffects,
             effectiveOutages,
             deltaMs,
-            now
+            now,
+            turboMultiplier
           );
         }
         rooms = newRooms;
@@ -326,6 +352,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       deviceRepairStart,
       nextChaosAt,
       survivalTimeMs,
+      isTurboActive: newTurboActive,
+      turboTimer: newTurboTimer,
     });
   },
 }));

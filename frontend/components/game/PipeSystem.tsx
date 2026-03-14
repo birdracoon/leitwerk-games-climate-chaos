@@ -67,14 +67,16 @@ function drawHeatingPipes(
 function drawFlowParticles(
   g: Graphics,
   x1: number, y1: number, x2: number, y2: number,
-  color: number, alpha: number, powerLevel: number, count: number
+  color: number, alpha: number, powerLevel: number, count: number,
+  isTurbo = false
 ) {
   if (powerLevel <= 0) return;
   const cx1 = x1;
   const cy1 = (y1 + y2) / 2;
   const cx2 = x2;
   const cy2 = (y1 + y2) / 2;
-  const speed = 2000 - (powerLevel / 100) * 1500;
+  const baseSpeed = 2000 - (powerLevel / 100) * 1500;
+  const speed = isTurbo ? baseSpeed / 3 : baseSpeed;
   const now = Date.now() / speed;
   for (let i = 0; i < count; i++) {
     const t = (now + i * 0.15) % 1;
@@ -109,6 +111,7 @@ export function PipeSystem({ width, height }: { width: number; height: number })
   const systemOutages = useGameStore((s) => s.systemOutages);
   const brokenDevices = useGameStore((s) => s.brokenDevices);
   const isBlackout = useGameStore((s) => s.isBlackout);
+  const isTurboActive = useGameStore((s) => s.isTurboActive);
 
   const isSystemDisabled = (type: SystemType) =>
     systemOutages.has(type) || brokenDevices.has(type) || isBlackout;
@@ -149,7 +152,10 @@ export function PipeSystem({ width, height }: { width: number; height: number })
                 const color = type === "cooling" ? 0x00b0ff : 0x4caf50;
                 drawDuctPipe(g, x1, y1, x2, y2, color, alpha, strokeW);
                 if (!isSystemDisabled(type)) {
-                  drawFlowParticles(g, x1, y1, x2, y2, color, alpha, powerLevel, 6);
+                  drawFlowParticles(
+                    g, x1, y1, x2, y2, color, alpha, powerLevel, 6,
+                    type === "ventilation" && isTurboActive
+                  );
                 }
               }
             }}

@@ -51,4 +51,6 @@ export interface GameState {
   gameOverReason: string | null;
   survivalTimeMs: number;
   startTime: number | null;
+  isTurboActive: boolean;
+  turboTimer: number;
 }

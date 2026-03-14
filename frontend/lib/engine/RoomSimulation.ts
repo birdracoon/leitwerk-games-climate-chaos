@@ -43,7 +43,8 @@ const STATUS_TEXTS: Record<CharacterState, (string | null)[]> = {
 const OUTSIDE_DRIFT = 0.008;
 const HEATING_POWER = 0.33;
 const COOLING_POWER = 0.15;
-const VENTILATION_AIR = 0.25;
+/** Erhöht, damit Lüftung bei vielen Personen (z.B. Aula 60+) mithalten kann */
+const VENTILATION_AIR = 0.6;
 const VENTILATION_TEMP_STABILIZE = 0.05;
 
 export function createInitialRoomState(id: RoomId): RoomState {
@@ -92,7 +93,8 @@ export function tickRoomSimulation(
   chaosEffects: ChaosEffect[],
   systemOutages: Set<SystemType>,
   deltaMs: number,
-  now: number
+  now: number,
+  turboMultiplier = 1
 ): RoomState {
   const dt = deltaMs / 1000;
   let temp = room.temperature;
@@ -120,7 +122,7 @@ export function tickRoomSimulation(
         temp -= COOLING_POWER * p * dt;
         break;
       case "ventilation":
-        air = Math.min(100, air + VENTILATION_AIR * p * dt);
+        air = Math.min(100, air + VENTILATION_AIR * p * turboMultiplier * dt);
         temp += (20 - temp) * VENTILATION_TEMP_STABILIZE * p * dt;
         break;
     }

@@ -9,6 +9,7 @@ import {
 } from "react";
 import type { Texture } from "pixi.js";
 import { Assets, Texture as PixiTexture, Rectangle } from "pixi.js";
+import { BASE_PATH } from "@/lib/constants";
 
 export interface CharacterTexturesMap {
   player: Texture | null;
@@ -21,22 +22,22 @@ export interface CharacterTexturesMap {
 const CharacterTexturesContext = createContext<CharacterTexturesMap | null>(null);
 
 const PNG_POSE_PATHS: Record<string, string[]> = {
-  player: ["/kenney_platformer-characters/PNG/Player/Poses/player_idle.png"],
+  player: [`${BASE_PATH}/kenney_platformer-characters/PNG/Player/Poses/player_idle.png`],
   female: [
-    "/kenney_platformer-characters/PNG/Female/Poses/female_idle.png",
-    "/kenney_platformer-characters/PNG/Woman/Poses/woman_idle.png",
+    `${BASE_PATH}/kenney_platformer-characters/PNG/Female/Poses/female_idle.png`,
+    `${BASE_PATH}/kenney_platformer-characters/PNG/Woman/Poses/woman_idle.png`,
   ],
-  adventurer: ["/kenney_platformer-characters/PNG/Adventurer/Poses/adventurer_idle.png"],
-  soldier: ["/kenney_platformer-characters/PNG/Soldier/Poses/soldier_idle.png"],
-  zombie: ["/kenney_platformer-characters/PNG/Zombie/Poses/zombie_idle.png"],
+  adventurer: [`${BASE_PATH}/kenney_platformer-characters/PNG/Adventurer/Poses/adventurer_idle.png`],
+  soldier: [`${BASE_PATH}/kenney_platformer-characters/PNG/Soldier/Poses/soldier_idle.png`],
+  zombie: [`${BASE_PATH}/kenney_platformer-characters/PNG/Zombie/Poses/zombie_idle.png`],
 };
 
 const FALLBACK_SVG_PATHS: Record<string, string> = {
-  player: "/kenney_platformer-characters/Vector/player_vector.svg",
-  female: "/kenney_platformer-characters/Vector/female_vector.svg",
-  adventurer: "/kenney_platformer-characters/Vector/adventurer_vector.svg",
-  soldier: "/kenney_platformer-characters/Vector/soldier_vector.svg",
-  zombie: "/kenney_platformer-characters/Vector/zombie_vector.svg",
+  player: `${BASE_PATH}/kenney_platformer-characters/Vector/player_vector.svg`,
+  female: `${BASE_PATH}/kenney_platformer-characters/Vector/female_vector.svg`,
+  adventurer: `${BASE_PATH}/kenney_platformer-characters/Vector/adventurer_vector.svg`,
+  soldier: `${BASE_PATH}/kenney_platformer-characters/Vector/soldier_vector.svg`,
+  zombie: `${BASE_PATH}/kenney_platformer-characters/Vector/zombie_vector.svg`,
 };
 
 const CHARACTER_KEYS = ["player", "female", "adventurer", "soldier", "zombie"] as const;
@@ -108,7 +109,7 @@ export function useCharacterTextures() {
   return useContext(CharacterTexturesContext);
 }
 
-const TILESHEET_PATH = "/kenney_roguelike-indoors/Tilesheets/roguelikeIndoor_transparent.png";
+const TILESHEET_PATH = `${BASE_PATH}/kenney_roguelike-indoors/Tilesheets/roguelikeIndoor_transparent.png`;
 const TILE_SIZE = 16;
 const TILE_STRIDE = 17;
 
@@ -163,7 +164,7 @@ export function useRoomDekoTextures() {
   return useContext(RoomDekoContext);
 }
 
-const FLOOR_TEXTURE_PATH = "/textures/floor_tile.png";
+const FLOOR_TEXTURE_PATH = `${BASE_PATH}/textures/floor_tile.png`;
 
 const FloorTextureContext = createContext<Texture | null>(null);
 
@@ -206,14 +207,14 @@ export function useFloorTexture() {
 }
 
 const RACING_ASSETS: Record<string, string> = {
-  cone: "/racing-pack/PNG/Objects/cone_straight.png",
-  barrier: "/racing-pack/PNG/Objects/barrier_red.png",
+  cone: `${BASE_PATH}/racing-pack/PNG/Objects/cone_straight.png`,
+  barrier: `${BASE_PATH}/racing-pack/PNG/Objects/barrier_red.png`,
 };
 
 const DEVICE_PATHS: Record<string, string> = {
-  heating: "/warm.png",
-  cooling: "/air-conditioner.png",
-  ventilation: "/fan.png",
+  heating: `${BASE_PATH}/warm.png`,
+  cooling: `${BASE_PATH}/air-conditioner.png`,
+  ventilation: `${BASE_PATH}/fan.png`,
 };
 
 export interface DeviceTexturesMap {
