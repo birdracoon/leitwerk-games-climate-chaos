@@ -1,4 +1,6 @@
-export const BASE_PATH = "/climate-chaos";
+// The reverse proxy serves the application directly at the domain root.
+// Keep asset and navigation URLs relative to that root as well.
+export const BASE_PATH = "";
 
 export const ROOM_IDS = [
   "turnhalle",

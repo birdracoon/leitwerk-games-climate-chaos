@@ -14,7 +14,7 @@ npm run dev
 ```
 
 Die App ist anschließend unter
-[http://localhost:3000/climate-chaos](http://localhost:3000/climate-chaos)
+[http://localhost:3000](http://localhost:3000)
 erreichbar.
 
 ### Umgebungsvariablen
@@ -155,7 +155,7 @@ Danach im Tab **SSL** ein Let's-Encrypt-Zertifikat anfordern und **Force SSL**
 aktivieren. Die Anwendung liegt wegen ihres Next.js-`basePath` unter:
 
 ```text
-https://<domain>/climate-chaos/
+https://<domain>/
 ```
 
 NPM leitet den Pfad unverändert weiter; ein zusätzlicher Rewrite ist nicht

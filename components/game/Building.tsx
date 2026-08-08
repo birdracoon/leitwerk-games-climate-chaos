@@ -722,7 +722,6 @@ function getCharacterTextureKey(
   state: string,
   index: number
 ): "player" | "female" | "adventurer" | "soldier" | "zombie" {
-  if (state === "asleep") return "zombie";
   const keys: ("player" | "female" | "adventurer")[] = ["player", "female", "adventurer"];
   return keys[index % 3];
 }
@@ -752,16 +751,19 @@ function WanderingCharacter({
   const posRef = useRef(getRandomTarget(w, h));
   const targetRef = useRef(getRandomTarget(w, h));
   const waitRef = useRef(0);
+  const phaseRef = useRef(index * 1.7);
 
   useTick((ticker) => {
     const c = containerRef.current;
     const s = spriteRef.current;
-    if (!c || state === "asleep") return;
+    if (!c) return;
     const delta = ticker.deltaMS ?? 16;
     const pos = posRef.current;
     const target = targetRef.current;
+    const asleep = state === "asleep";
+    let walking = false;
 
-    if (waitRef.current <= 0) {
+    if (!asleep && waitRef.current <= 0) {
       const dx = target.x - pos.x;
       const dy = target.y - pos.y;
       const dist = Math.hypot(dx, dy);
@@ -775,18 +777,25 @@ function WanderingCharacter({
           x: pos.x + (dx / dist) * speed,
           y: pos.y + (dy / dist) * speed,
         };
+        walking = true;
       }
-    } else {
+    } else if (!asleep) {
       waitRef.current -= delta;
     }
 
+    phaseRef.current += (walking ? 0.014 : 0.0028) * delta;
+    const gait = Math.sin(phaseRef.current);
     const stateShake = state === "frozen" ? Math.sin(Date.now() / 50) * 2 : 0;
     const stateFloat = state === "overheated" ? Math.sin(Date.now() / 400) * 5 : 0;
     c.x = posRef.current.x + stateShake;
-    c.y = posRef.current.y + stateFloat;
+    c.y = posRef.current.y + stateFloat - (walking ? Math.abs(gait) * 3 : 0);
     if (s) {
-      s.scale.x = (targetRef.current.x < posRef.current.x ? -1 : 1) * scale * (state === "asleep" ? 0.95 : 1);
-      s.scale.y = scale * (state === "asleep" ? 0.95 : 1);
+      const direction = targetRef.current.x < posRef.current.x ? -1 : 1;
+      const asleepScale = asleep ? 0.95 : 1;
+      s.scale.x = direction * scale * asleepScale;
+      s.scale.y = scale * asleepScale * (walking ? 1 - gait * 0.025 : 1);
+      s.y = walking ? -Math.abs(gait) * 2 : asleep ? 0 : Math.sin(phaseRef.current) * 0.5;
+      s.rotation = walking ? gait * 0.035 * direction : 0;
     }
   });
 
