@@ -1,121 +1,202 @@
-# Climate Chaos – Frontend
+# Climate Chaos
 
-Next.js-basierte Web-App für das Leitwerk-Spiel.
+Next.js-basierte Web-App für das Leitwerk-Spiel. Die Produktionsinstanz läuft als
+rootful Podman-Container auf dem Netcup-VPS; Nginx Proxy Manager übernimmt den
+öffentlichen HTTP-/HTTPS-Zugang.
 
-## Entwicklung
+## Lokale Entwicklung
 
-### Voraussetzungen
-
-- Node.js 18+
-- npm, yarn, pnpm oder bun
-
-### Lokal starten
+Voraussetzungen: Node.js 22 und npm.
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
-Die App läuft unter [http://localhost:3000](http://localhost:3000).
+Die App ist anschließend unter
+[http://localhost:3000/climate-chaos](http://localhost:3000/climate-chaos)
+erreichbar.
 
 ### Umgebungsvariablen
 
-Kopiere `.env.example` nach `.env.local` und passe die Werte an:
-
 | Variable | Beschreibung | Standard |
-|----------|--------------|----------|
-| `NEXT_PUBLIC_STORAGE_MODE` | `local` = IndexedDB, `backend` = .NET-API | `local` |
-| `NEXT_PUBLIC_API_URL` | Backend-URL (nur bei `backend`-Modus) | `http://localhost:5224` |
+|---|---|---|
+| `NEXT_PUBLIC_STORAGE_MODE` | `local` für IndexedDB oder `backend` für die API | `local` |
+| `NEXT_PUBLIC_API_URL` | Öffentliche Backend-URL im `backend`-Modus | leer |
 
-### Skripte
+Beide Werte werden beim Container-Build in die Next.js-Anwendung eingebaut. Eine
+Änderung erfordert deshalb einen neuen Build beziehungsweise ein erzwungenes
+Update.
 
-- `npm run dev` – Development-Server mit Hot-Reload
+Nützliche npm-Kommandos:
+
+- `npm run dev` – Entwicklungsserver
 - `npm run build` – Produktions-Build
-- `npm run start` – Produktions-Server (nach `build`)
-- `npm run lint` – ESLint ausführen
+- `npm run start` – Produktionsserver nach dem Build
+- `npm run lint` – ESLint
 
----
+## Deployment auf Netcup
 
-## Deployment
+Das Deployment besteht aus:
 
-### Client-only (reines Web-Deployment)
+- `Containerfile`: mehrstufiger, unprivilegiert laufender Next.js-Container
+- `scripts/deploy-netcup.sh`: richtet den VPS von Ubuntu aus per SSH ein
+- `scripts/update-netcup.sh`: läuft auf dem VPS und aktualisiert aus GitHub
+- `climate-chaos-update.timer`: wird durch das Deploy-Skript als systemd-Timer
+  installiert
 
-Spiel ohne Backend – alle Daten werden in der Browser-IndexedDB gespeichert. Ideal für statisches Hosting (Vercel, Netlify, GitHub Pages, etc.).
+Das frühere STRATO-/PowerShell-Deployment und die lokale Nginx-Konfiguration
+werden nicht mehr verwendet.
 
-**Schritte:**
+### 1. DNS, SSH und Firewall
 
-1. `.env.production` oder Build-Env setzen:
+Der DNS-A-Record der gewünschten Domain muss auf `89.58.18.175` zeigen. Die
+lokale Datei `~/.ssh/config` enthält:
 
-   ```
-   NEXT_PUBLIC_STORAGE_MODE=local
-   ```
-
-2. Build und Start:
-
-   ```bash
-   npm run build
-   npm run start
-   ```
-
-3. Oder bei Vercel/Netlify: `NEXT_PUBLIC_STORAGE_MODE=local` in den Projekt-Einstellungen hinterlegen.
-
-**Hinweis:** Sessions und Leaderboard sind pro Browser/Device lokal. Keine Daten werden serverseitig gespeichert.
-
----
-
-### Server-Modus (mit .NET-Backend)
-
-Spiel mit persistenter Datenbank – Sessions und Scores werden im Backend gespeichert.
-
-**Schritte:**
-
-1. .NET-Backend starten (Port 5224).
-
-2. `.env.production` oder Build-Env:
-
-   ```
-   NEXT_PUBLIC_STORAGE_MODE=backend
-   NEXT_PUBLIC_API_URL=https://deine-api.example.com
-   ```
-
-3. Build und Start wie oben.
-
-**Hinweis:** `NEXT_PUBLIC_API_URL` muss zur Laufzeit erreichbar sein (CORS im Backend konfigurieren).
-
----
-
-## Deployment per PowerShell auf STRATO
-
-Fuer Windows-Deployments liegt ein Skript unter `scripts/deploy-strato.ps1`.
-
-### Voraussetzungen
-
-- Lokaler OpenSSH-Client (`ssh`, `scp`) und `tar`
-- SSH-Zugang auf den Server
-- Node.js/NPM auf dem Zielserver
-
-### Beispielaufrufe
-
-Minimal:
-
-```powershell
-./scripts/deploy-strato.ps1
+```sshconfig
+Host netcup
+    HostName 89.58.18.175
+    User root
+    IdentityFile ~/.ssh/id_netcup
+    IdentitiesOnly yes
+    AddKeysToAgent yes
 ```
 
-Mit SSH-Key/Zertifikat, Zielpfad und Service-Restart:
+Verbindung testen:
 
-```powershell
-./scripts/deploy-strato.ps1 `
-   -SshKeyPath C:\Users\du\.ssh\id_rsa `
-   -SshCertificatePath C:\Users\du\.ssh\id_rsa-cert.pub `
-   -RemoteAppDir /var/www/climate-chaos-frontend `
-   -ServiceName climate-chaos-frontend
+```bash
+ssh netcup
 ```
 
-Optional mit `nvm` auf dem Server:
+Am VPS sollten öffentlich nur SSH sowie HTTP/HTTPS erreichbar sein. Falls UFW
+verwendet wird:
 
-```powershell
-./scripts/deploy-strato.ps1 -UseNvm -NodeMajor 20
+```bash
+ufw allow OpenSSH
+ufw allow 80/tcp
+ufw allow 443/tcp
+ufw enable
 ```
 
-Das Skript erstellt ein Archiv ohne `node_modules`/`.next`, uebertraegt es auf den Server, fuehrt `npm ci` und `npm run build` aus, setzt den Symlink `current` auf das neue Release und behaelt die letzten 5 Releases.
+Port 4300 muss **nicht** freigegeben werden. Die App bindet ihn nur an
+`127.0.0.1`. Die Administrationsoberfläche von Nginx Proxy Manager (typisch Port
+81) sollte ebenfalls nicht ungeschützt öffentlich erreichbar sein.
+
+### 2. Erste Installation
+
+Die zu deployende Version muss zuerst auf GitHub im Branch `main` liegen. Das
+Skript installiert auf dem VPS `podman`, `git` und `curl`, legt die
+systemd-Einheiten an, baut das Image aus GitHub und startet den Container.
+
+```bash
+chmod +x scripts/deploy-netcup.sh scripts/update-netcup.sh
+./scripts/deploy-netcup.sh
+```
+
+Standardmäßig verwendet das Skript den SSH-Alias `netcup`, den Branch `main`,
+den lokalen Host-Port 4300 und prüft alle 15 Minuten auf Updates. Relevante Optionen:
+
+```bash
+./scripts/deploy-netcup.sh \
+  --branch main \
+  --update-interval 30min \
+  --storage-mode local
+```
+
+Für einen API-Betrieb:
+
+```bash
+./scripts/deploy-netcup.sh \
+  --storage-mode backend \
+  --api-url https://api.example.org
+```
+
+Alle Optionen zeigt `./scripts/deploy-netcup.sh --help`. Ein erneuter Aufruf ist
+zulässig und aktualisiert Konfiguration, Timer und Anwendung.
+
+### 3. Nginx Proxy Manager
+
+Die App und Nginx Proxy Manager müssen dasselbe Podman-Netzwerk verwenden. Das
+Deployment legt das Netzwerk `climate-chaos-proxy` automatisch an. Den Namen des
+laufenden NPM-Containers ermitteln und ihn einmalig verbinden:
+
+```bash
+podman ps --format '{{.Names}}'
+podman network connect climate-chaos-proxy <npm-containername>
+```
+
+Der NPM-Container muss beim späteren Neuerstellen ebenfalls wieder mit diesem
+Netz verbunden werden, idealerweise über dessen Compose-/Quadlet-Konfiguration.
+Läuft Nginx Proxy Manager nicht mit Podman auf demselben Host, kann dieses
+Netzwerk nicht geteilt werden; dann muss dessen Netzwerk-/Host-Gateway-Setup
+separat angepasst werden.
+
+In Nginx Proxy Manager einen **Proxy Host** anlegen:
+
+| Einstellung | Wert |
+|---|---|
+| Domain Names | gewünschte Domain |
+| Scheme | `http` |
+| Forward Hostname / IP | `climate-chaos` |
+| Forward Port | `4300` |
+| Websockets Support | aktiv |
+
+Danach im Tab **SSL** ein Let's-Encrypt-Zertifikat anfordern und **Force SSL**
+aktivieren. Die Anwendung liegt wegen ihres Next.js-`basePath` unter:
+
+```text
+https://<domain>/climate-chaos/
+```
+
+NPM leitet den Pfad unverändert weiter; ein zusätzlicher Rewrite ist nicht
+notwendig.
+
+## Update-Mechanismus
+
+Der Timer fragt standardmäßig alle 15 Minuten den in `/etc/climate-chaos.env`
+konfigurierten GitHub-Branch ab. Nur wenn dessen Commit von der aktuell
+installierten Version abweicht, wird aktualisiert:
+
+1. neuen Commit aus GitHub holen,
+2. neues Podman-Image bauen,
+3. bisherigen Container anhalten und den neuen starten,
+4. `http://127.0.0.1:4300/climate-chaos/` prüfen,
+5. bei fehlgeschlagenem Healthcheck automatisch den alten Container starten.
+
+Ein fehlgeschlagener Build verändert den laufenden Container nicht. Gleichzeitige
+Updates verhindert ein Lockfile.
+
+### Manuelles Update
+
+Normale Prüfung; ohne neuen Commit passiert nichts:
+
+```bash
+ssh netcup climate-chaos-update
+```
+
+Build und Neustart derselben Version erzwingen, beispielsweise nach geänderten
+Build-Variablen:
+
+```bash
+ssh netcup climate-chaos-update --force
+```
+
+### Status und Logs
+
+```bash
+ssh netcup systemctl status climate-chaos-update.timer
+ssh netcup journalctl -u climate-chaos-update.service -n 100 --no-pager
+ssh netcup podman ps --filter name=climate-chaos
+ssh netcup podman logs --tail 100 climate-chaos
+```
+
+Zeitplan anzeigen oder ein Update sofort über systemd starten:
+
+```bash
+ssh netcup systemctl list-timers climate-chaos-update.timer
+ssh netcup systemctl start climate-chaos-update.service
+```
+
+Die deployte Commit-ID steht auf dem VPS in
+`/opt/climate-chaos/state/current-commit`. Die zentrale Konfiguration liegt in
+`/etc/climate-chaos.env` und ist nur für `root` lesbar.
