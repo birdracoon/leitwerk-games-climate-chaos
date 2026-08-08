@@ -78,9 +78,9 @@ ufw allow 443/tcp
 ufw enable
 ```
 
-Port 4300 wird **nicht auf dem Host veröffentlicht**. Die App ist ausschließlich
-im gemeinsamen Podman-Netz über `climate-chaos:4300` erreichbar. Die
-Administrationsoberfläche von Nginx Proxy Manager
+Port 4300 wird auf `0.0.0.0` veröffentlicht, damit der Proxy Manager ihn über
+die Host-Gateway-IP erreichen kann. Der Zugriff auf Port 4300 wird per UFW nur
+vom internen Podman-Netz erlaubt. Die Administrationsoberfläche von Nginx Proxy Manager
 (typisch Port 81) sollte ebenfalls nicht ungeschützt öffentlich erreichbar sein.
 
 Wenn UFW aktiv ist, erlaubt das Deploy-Skript DNS-Anfragen an Podmans
@@ -123,7 +123,9 @@ zulässig und aktualisiert Konfiguration, Timer und Anwendung.
 ### 3. Nginx Proxy Manager
 
 Nginx Proxy Manager und die Anwendung laufen beide unter Podman. Der Updater
-hängt Climate Chaos an das von NPM Compose angelegte Netzwerk `npm_default`.
+hängt Climate Chaos an das von NPM Compose angelegte Netzwerk `npm_default` und
+veröffentlicht zusätzlich `0.0.0.0:4300->4300/tcp` für den Zugriff über die
+Host-Gateway-IP.
 NPM muss deshalb vor dem ersten App-Deployment laufen. Netzwerk prüfen:
 
 ```bash

@@ -124,6 +124,7 @@ if ! podman run --detach \
     --name "$CONTAINER_NAME" \
     --restart=unless-stopped \
     --env "PORT=$APP_PORT" \
+    --publish "0.0.0.0:${APP_PORT}:${APP_PORT}" \
     --network "$PROXY_NETWORK" \
     --network-alias "$CONTAINER_NAME" \
     --label "org.opencontainers.image.revision=$remote_commit" \

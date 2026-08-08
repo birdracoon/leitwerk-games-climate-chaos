@@ -116,6 +116,7 @@ if command -v ufw >/dev/null 2>&1 \
     proxy_interface="$(podman network inspect "$PROXY_NETWORK" --format '{{.NetworkInterface}}')"
     ufw allow in on "$proxy_interface" to any port 53 proto udp comment 'Podman container DNS'
     ufw allow in on "$proxy_interface" to any port 53 proto tcp comment 'Podman container DNS'
+    ufw allow in on "$proxy_interface" to any port "$APP_PORT" proto tcp comment 'Climate Chaos from NPM'
 fi
 
 cat > /etc/systemd/system/climate-chaos-update.service <<EOF
