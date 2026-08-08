@@ -8,6 +8,7 @@ SSH_TARGET="netcup"
 REPO_URL="https://github.com/birdracoon/leitwerk-games-climate-chaos.git"
 REPO_BRANCH="main"
 APP_PORT="4300"
+PROXY_NETWORK="npm_default"
 UPDATE_INTERVAL="15min"
 STORAGE_MODE="local"
 API_URL=""
@@ -20,6 +21,7 @@ Usage: ./scripts/deploy-netcup.sh [options]
   --repo-url URL          Git repository URL
   --branch NAME           Branch to deploy (default: main)
   --app-port PORT         Application port (default: 4300)
+  --proxy-network NAME    Podman network used by NPM (default: npm_default)
   --update-interval TIME  systemd timer interval, e.g. 15min or 1h
   --storage-mode MODE     Next.js build setting: local or backend
   --api-url URL           Public backend URL for backend mode
@@ -33,6 +35,7 @@ while [[ $# -gt 0 ]]; do
         --repo-url) REPO_URL="$2"; shift 2 ;;
         --branch) REPO_BRANCH="$2"; shift 2 ;;
         --app-port) APP_PORT="$2"; shift 2 ;;
+        --proxy-network) PROXY_NETWORK="$2"; shift 2 ;;
         --update-interval) UPDATE_INTERVAL="$2"; shift 2 ;;
         --storage-mode) STORAGE_MODE="$2"; shift 2 ;;
         --api-url) API_URL="$2"; shift 2 ;;
@@ -43,6 +46,8 @@ done
 
 [[ "$APP_PORT" =~ ^[0-9]+$ ]] && (( APP_PORT >= 1 && APP_PORT <= 65535 )) \
     || { echo "Invalid port: $APP_PORT" >&2; exit 2; }
+[[ "$PROXY_NETWORK" =~ ^[a-zA-Z0-9_.-]+$ ]] \
+    || { echo "Invalid proxy network: $PROXY_NETWORK" >&2; exit 2; }
 [[ "$STORAGE_MODE" == "local" || "$STORAGE_MODE" == "backend" ]] \
     || { echo "--storage-mode must be 'local' or 'backend'." >&2; exit 2; }
 [[ "$UPDATE_INTERVAL" =~ ^[0-9]+(s|min|h|d|w)$ ]] \
@@ -78,7 +83,7 @@ printf '%q\n' \
     "CONTAINER_NAME=climate-chaos" \
     "IMAGE_NAME=localhost/climate-chaos" \
     "APP_PORT=$APP_PORT" \
-    "PROXY_NETWORK=climate-chaos-proxy" \
+    "PROXY_NETWORK=$PROXY_NETWORK" \
     "NEXT_PUBLIC_STORAGE_MODE=$STORAGE_MODE" \
     "NEXT_PUBLIC_API_URL=$API_URL" > "$LOCAL_CONFIG"
 scp "$LOCAL_CONFIG" "$SSH_TARGET:$TEMP_CONFIG"
@@ -100,6 +105,18 @@ rm -f "$temp_updater"
 install -o root -g root -m 0600 "$temp_config" /etc/climate-chaos.env
 rm -f "$temp_config"
 chmod 0600 /etc/climate-chaos.env
+
+# UFW can otherwise block queries to Podman's aardvark-dns even though both
+# containers are attached to the same bridge network.
+# shellcheck disable=SC1091
+source /etc/climate-chaos.env
+if command -v ufw >/dev/null 2>&1 \
+    && ufw status | grep -q '^Status: active' \
+    && podman network exists "$PROXY_NETWORK"; then
+    proxy_interface="$(podman network inspect "$PROXY_NETWORK" --format '{{.NetworkInterface}}')"
+    ufw allow in on "$proxy_interface" to any port 53 proto udp comment 'Podman container DNS'
+    ufw allow in on "$proxy_interface" to any port 53 proto tcp comment 'Podman container DNS'
+fi
 
 cat > /etc/systemd/system/climate-chaos-update.service <<EOF
 [Unit]

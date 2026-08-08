@@ -24,7 +24,7 @@ source "$CONFIG_FILE"
 : "${CONTAINER_NAME:=climate-chaos}"
 : "${IMAGE_NAME:=localhost/climate-chaos}"
 : "${APP_PORT:=4300}"
-: "${PROXY_NETWORK:=climate-chaos-proxy}"
+: "${PROXY_NETWORK:=npm_default}"
 : "${NEXT_PUBLIC_STORAGE_MODE:=local}"
 : "${NEXT_PUBLIC_API_URL:=}"
 
@@ -32,13 +32,13 @@ source "$CONFIG_FILE"
     || { echo "APP_DIR must be an absolute, non-root path." >&2; exit 1; }
 [[ "$APP_PORT" =~ ^[0-9]+$ ]] && (( APP_PORT >= 1 && APP_PORT <= 65535 )) \
     || { echo "APP_PORT is invalid: $APP_PORT" >&2; exit 1; }
+[[ "$PROXY_NETWORK" =~ ^[a-zA-Z0-9_.-]+$ ]] \
+    || { echo "PROXY_NETWORK is invalid: $PROXY_NETWORK" >&2; exit 1; }
 
 REPOSITORY_DIR="$APP_DIR/repository"
 STATE_DIR="$APP_DIR/state"
 CURRENT_COMMIT_FILE="$STATE_DIR/current-commit"
 LOCK_FILE="/run/lock/climate-chaos-update.lock"
-HEALTH_URL="http://127.0.0.1:${APP_PORT}/climate-chaos/"
-
 log() { printf '[climate-chaos] %s\n' "$*"; }
 die() { log "ERROR: $*" >&2; exit 1; }
 
@@ -47,8 +47,23 @@ for command_name in git podman curl flock; do
 done
 
 mkdir -p "$APP_DIR" "$STATE_DIR"
-exec 9>"$LOCK_FILE"
-flock -n 9 || { log "Another update is already running; skipping."; exit 0; }
+if [[ "${CLIMATE_CHAOS_UPDATE_LOCKED:-0}" != "1" ]]; then
+    lock_status=0
+    flock --exclusive --nonblock --close --conflict-exit-code 75 \
+        "$LOCK_FILE" env \
+        CLIMATE_CHAOS_UPDATE_LOCKED=1 \
+        CLIMATE_CHAOS_CONFIG="$CONFIG_FILE" \
+        "$0" "$@" || lock_status=$?
+
+    if [[ "$lock_status" -eq 75 ]]; then
+        if [[ "$FORCE_UPDATE" -eq 1 ]]; then
+            die "Another update is already running."
+        fi
+        log "Another update is already running; skipping."
+        exit 0
+    fi
+    exit "$lock_status"
+fi
 
 remote_commit="$(git ls-remote "$REPO_URL" "refs/heads/$REPO_BRANCH" | awk 'NR == 1 { print $1 }')"
 [[ "$remote_commit" =~ ^[0-9a-f]{40}$ ]] || die "Could not resolve branch '$REPO_BRANCH' from GitHub."
@@ -77,6 +92,7 @@ git -C "$REPOSITORY_DIR" clean -fdx
 image_tag="$IMAGE_NAME:${remote_commit:0:12}"
 log "Building $image_tag."
 podman build \
+    --network=host \
     --pull=always \
     --build-arg "NEXT_PUBLIC_STORAGE_MODE=$NEXT_PUBLIC_STORAGE_MODE" \
     --build-arg "NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL" \
@@ -86,7 +102,8 @@ podman build \
 
 previous_name="${CONTAINER_NAME}-previous"
 previous_image=""
-podman network exists "$PROXY_NETWORK" || podman network create "$PROXY_NETWORK"
+podman network exists "$PROXY_NETWORK" \
+    || die "Podman network '$PROXY_NETWORK' does not exist. Start Nginx Proxy Manager first."
 podman rm --force --ignore "$previous_name"
 if podman container exists "$CONTAINER_NAME"; then
     previous_image="$(podman inspect --format '{{.ImageName}}' "$CONTAINER_NAME")"
@@ -107,8 +124,8 @@ if ! podman run --detach \
     --name "$CONTAINER_NAME" \
     --restart=unless-stopped \
     --env "PORT=$APP_PORT" \
-    --publish "127.0.0.1:${APP_PORT}:${APP_PORT}" \
     --network "$PROXY_NETWORK" \
+    --network-alias "$CONTAINER_NAME" \
     --label "org.opencontainers.image.revision=$remote_commit" \
     "$image_tag"; then
     rollback
@@ -117,7 +134,8 @@ fi
 
 healthy=0
 for _ in {1..30}; do
-    if curl --fail --silent --show-error --max-time 3 "$HEALTH_URL" >/dev/null; then
+    if podman exec "$CONTAINER_NAME" node -e \
+        "fetch('http://127.0.0.1:${APP_PORT}/climate-chaos/').then((response) => { if (!response.ok) process.exit(1); }).catch(() => process.exit(1));"; then
         healthy=1
         break
     fi
@@ -127,7 +145,7 @@ done
 if [[ "$healthy" -ne 1 ]]; then
     podman logs --tail 100 "$CONTAINER_NAME" >&2 || true
     rollback
-    die "Health check failed: $HEALTH_URL"
+    die "Health check failed inside container on port $APP_PORT"
 fi
 
 printf '%s\n' "$remote_commit" > "$CURRENT_COMMIT_FILE"

@@ -78,9 +78,14 @@ ufw allow 443/tcp
 ufw enable
 ```
 
-Port 4300 muss **nicht** freigegeben werden. Die App bindet ihn nur an
-`127.0.0.1`. Die Administrationsoberfläche von Nginx Proxy Manager (typisch Port
-81) sollte ebenfalls nicht ungeschützt öffentlich erreichbar sein.
+Port 4300 wird **nicht auf dem Host veröffentlicht**. Die App ist ausschließlich
+im gemeinsamen Podman-Netz über `climate-chaos:4300` erreichbar. Die
+Administrationsoberfläche von Nginx Proxy Manager
+(typisch Port 81) sollte ebenfalls nicht ungeschützt öffentlich erreichbar sein.
+
+Wenn UFW aktiv ist, erlaubt das Deploy-Skript DNS-Anfragen an Podmans
+`aardvark-dns` ausschließlich auf dem internen NPM-Netzwerkinterface. Ohne diese
+Regel kann NPM den Containernamen `climate-chaos` nicht auflösen.
 
 ### 2. Erste Installation
 
@@ -94,7 +99,8 @@ chmod +x scripts/deploy-netcup.sh scripts/update-netcup.sh
 ```
 
 Standardmäßig verwendet das Skript den SSH-Alias `netcup`, den Branch `main`,
-den lokalen Host-Port 4300 und prüft alle 15 Minuten auf Updates. Relevante Optionen:
+Port 4300, das Podman-Netz `npm_default` und prüft alle 15 Minuten auf Updates.
+Relevante Optionen:
 
 ```bash
 ./scripts/deploy-netcup.sh \
@@ -116,20 +122,22 @@ zulässig und aktualisiert Konfiguration, Timer und Anwendung.
 
 ### 3. Nginx Proxy Manager
 
-Die App und Nginx Proxy Manager müssen dasselbe Podman-Netzwerk verwenden. Das
-Deployment legt das Netzwerk `climate-chaos-proxy` automatisch an. Den Namen des
-laufenden NPM-Containers ermitteln und ihn einmalig verbinden:
+Nginx Proxy Manager und die Anwendung laufen beide unter Podman. Der Updater
+hängt Climate Chaos an das von NPM Compose angelegte Netzwerk `npm_default`.
+NPM muss deshalb vor dem ersten App-Deployment laufen. Netzwerk prüfen:
 
 ```bash
-podman ps --format '{{.Names}}'
-podman network connect climate-chaos-proxy <npm-containername>
+podman network exists npm_default
+podman inspect npm_app_1 \
+  --format '{{range $name, $network := .NetworkSettings.Networks}}{{$name}}{{end}}'
 ```
 
-Der NPM-Container muss beim späteren Neuerstellen ebenfalls wieder mit diesem
-Netz verbunden werden, idealerweise über dessen Compose-/Quadlet-Konfiguration.
-Läuft Nginx Proxy Manager nicht mit Podman auf demselben Host, kann dieses
-Netzwerk nicht geteilt werden; dann muss dessen Netzwerk-/Host-Gateway-Setup
-separat angepasst werden.
+Falls die NPM-Compose-Konfiguration einen anderen Netzwerknamen erzeugt, diesen
+beim Deployment angeben:
+
+```bash
+./scripts/deploy-netcup.sh --proxy-network <npm-podman-netz>
+```
 
 In Nginx Proxy Manager einen **Proxy Host** anlegen:
 
@@ -158,9 +166,9 @@ konfigurierten GitHub-Branch ab. Nur wenn dessen Commit von der aktuell
 installierten Version abweicht, wird aktualisiert:
 
 1. neuen Commit aus GitHub holen,
-2. neues Podman-Image bauen,
+2. neues Podman-Image bauen (für Registry-Zugriff über das Host-Netz),
 3. bisherigen Container anhalten und den neuen starten,
-4. `http://127.0.0.1:4300/climate-chaos/` prüfen,
+4. den neuen Container-internen HTTP-Healthcheck prüfen,
 5. bei fehlgeschlagenem Healthcheck automatisch den alten Container starten.
 
 Ein fehlgeschlagener Build verändert den laufenden Container nicht. Gleichzeitige
