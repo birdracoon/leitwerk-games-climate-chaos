@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  basePath: "/climate-chaos",
+  basePath: "",
   transpilePackages: ["pixi.js", "@pixi/react"],
   trailingSlash: true, 
   output: 'standalone'
