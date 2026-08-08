@@ -1,64 +1,121 @@
-# Leitwerk – Climate Chaos
+# Climate Chaos – Frontend
 
-Ein Browser-Spiel: Du bist der neue Leitende Haustechniker an einer verrückten Schule am Tag der offenen Tür. Balanciere Temperatur und Luftqualität in den Räumen durch Heizen, Kühlen und Lüften.
+Next.js-basierte Web-App für das Leitwerk-Spiel.
 
-## Tech-Stack
+## Entwicklung
 
-- **Frontend**: Next.js 16, React 19, TypeScript, Tailwind, PixiJS, Zustand
-- **Backend**: C# .NET 10 Minimal API
-- **Datenbank**: SQLite (EF Core)
+### Voraussetzungen
 
-## Schnellstart
+- Node.js 18+
+- npm, yarn, pnpm oder bun
 
-### Backend
-
-```bash
-cd backend
-dotnet run
-```
-
-Backend läuft auf `http://localhost:5224`.
-
-### Frontend
+### Lokal starten
 
 ```bash
-cd frontend
 npm install
 npm run dev
 ```
 
-Frontend läuft auf `http://localhost:3000`.
+Die App läuft unter [http://localhost:3000](http://localhost:3000).
 
-### Umgebungsvariablen (optional)
+### Umgebungsvariablen
 
-Erstelle `frontend/.env.local`:
+Kopiere `.env.example` nach `.env.local` und passe die Werte an:
 
+| Variable | Beschreibung | Standard |
+|----------|--------------|----------|
+| `NEXT_PUBLIC_STORAGE_MODE` | `local` = IndexedDB, `backend` = .NET-API | `local` |
+| `NEXT_PUBLIC_API_URL` | Backend-URL (nur bei `backend`-Modus) | `http://localhost:5224` |
+
+### Skripte
+
+- `npm run dev` – Development-Server mit Hot-Reload
+- `npm run build` – Produktions-Build
+- `npm run start` – Produktions-Server (nach `build`)
+- `npm run lint` – ESLint ausführen
+
+---
+
+## Deployment
+
+### Client-only (reines Web-Deployment)
+
+Spiel ohne Backend – alle Daten werden in der Browser-IndexedDB gespeichert. Ideal für statisches Hosting (Vercel, Netlify, GitHub Pages, etc.).
+
+**Schritte:**
+
+1. `.env.production` oder Build-Env setzen:
+
+   ```
+   NEXT_PUBLIC_STORAGE_MODE=local
+   ```
+
+2. Build und Start:
+
+   ```bash
+   npm run build
+   npm run start
+   ```
+
+3. Oder bei Vercel/Netlify: `NEXT_PUBLIC_STORAGE_MODE=local` in den Projekt-Einstellungen hinterlegen.
+
+**Hinweis:** Sessions und Leaderboard sind pro Browser/Device lokal. Keine Daten werden serverseitig gespeichert.
+
+---
+
+### Server-Modus (mit .NET-Backend)
+
+Spiel mit persistenter Datenbank – Sessions und Scores werden im Backend gespeichert.
+
+**Schritte:**
+
+1. .NET-Backend starten (Port 5224).
+
+2. `.env.production` oder Build-Env:
+
+   ```
+   NEXT_PUBLIC_STORAGE_MODE=backend
+   NEXT_PUBLIC_API_URL=https://deine-api.example.com
+   ```
+
+3. Build und Start wie oben.
+
+**Hinweis:** `NEXT_PUBLIC_API_URL` muss zur Laufzeit erreichbar sein (CORS im Backend konfigurieren).
+
+---
+
+## Deployment per PowerShell auf STRATO
+
+Fuer Windows-Deployments liegt ein Skript unter `scripts/deploy-strato.ps1`.
+
+### Voraussetzungen
+
+- Lokaler OpenSSH-Client (`ssh`, `scp`) und `tar`
+- SSH-Zugang auf den Server
+- Node.js/NPM auf dem Zielserver
+
+### Beispielaufrufe
+
+Minimal:
+
+```powershell
+./scripts/deploy-strato.ps1
 ```
-NEXT_PUBLIC_API_URL=http://localhost:5224
+
+Mit SSH-Key/Zertifikat, Zielpfad und Service-Restart:
+
+```powershell
+./scripts/deploy-strato.ps1 `
+   -SshKeyPath C:\Users\du\.ssh\id_rsa `
+   -SshCertificatePath C:\Users\du\.ssh\id_rsa-cert.pub `
+   -RemoteAppDir /var/www/climate-chaos-frontend `
+   -ServiceName climate-chaos-frontend
 ```
 
-## Spielablauf
+Optional mit `nvm` auf dem Server:
 
-1. **Registrierung**: Wähle ein Pseudonym aus zwei Dropdowns (z.B. "Frostiger_Taschenrechner").
-2. **Spiel**: Verbinde Rohre vom Maschinenraum (Heizung, Kühlung, Lüftung) zu den Räumen.
-3. **Regelung**: Passe die Leistung pro Verbindung an.
-4. **Chaos-Events**: Reagiere auf spontane Ereignisse (Fenster auf, Server glühen, etc.).
-5. **Energie**: Überschreite nicht das Budget – sonst fliegt die Sicherung raus.
+```powershell
+./scripts/deploy-strato.ps1 -UseNvm -NodeMajor 20
+```
 
-## API-Endpunkte
-
-| Endpunkt | Methode | Beschreibung |
-|----------|---------|--------------|
-| `/api/session` | POST | Session erstellen |
-| `/api/game/start` | POST | Spielstart markieren |
-| `/api/score` | POST | Score einreichen |
-| `/api/leaderboard` | GET | Top 10 abrufen |
-| `/api/admin/clear` | POST | Alle Daten löschen (Admin-Key erforderlich) |
-
-## DSGVO
-
-- Keine personenbezogenen Daten
-- Pseudonym-Generator statt Freitext
-- Session-Token nur in `sessionStorage` (verfällt beim Schließen)
-- Keine Tracking-Cookies
-- Admin-Endpunkt zum Löschen aller Daten nach dem Event
+Das Skript erstellt ein Archiv ohne `node_modules`/`.next`, uebertraegt es auf den Server, fuehrt `npm ci` und `npm run build` aus, setzt den Symlink `current` auf das neue Release und behaelt die letzten 5 Releases.
