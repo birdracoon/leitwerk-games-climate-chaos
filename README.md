@@ -170,7 +170,7 @@ installierten Version abweicht, wird aktualisiert:
 1. neuen Commit aus GitHub holen,
 2. neues Podman-Image bauen (für Registry-Zugriff über das Host-Netz),
 3. bisherigen Container anhalten und den neuen starten,
-4. den neuen Container-internen HTTP-Healthcheck prüfen,
+4. `http://127.0.0.1:4300/` über das Host-Portmapping prüfen,
 5. bei fehlgeschlagenem Healthcheck automatisch den alten Container starten.
 
 Ein fehlgeschlagener Build verändert den laufenden Container nicht. Gleichzeitige

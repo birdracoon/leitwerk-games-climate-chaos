@@ -35,6 +35,9 @@ source "$CONFIG_FILE"
 [[ "$PROXY_NETWORK" =~ ^[a-zA-Z0-9_.-]+$ ]] \
     || { echo "PROXY_NETWORK is invalid: $PROXY_NETWORK" >&2; exit 1; }
 
+HEALTH_URL="http://127.0.0.1:${APP_PORT}/"
+LEGACY_HEALTH_URL="http://127.0.0.1:${APP_PORT}/climate-chaos/"
+
 REPOSITORY_DIR="$APP_DIR/repository"
 STATE_DIR="$APP_DIR/state"
 CURRENT_COMMIT_FILE="$STATE_DIR/current-commit"
@@ -135,8 +138,8 @@ fi
 
 healthy=0
 for _ in {1..30}; do
-    if podman exec "$CONTAINER_NAME" node -e \
-        "fetch('http://127.0.0.1:${APP_PORT}/climate-chaos/').then((response) => { if (!response.ok) process.exit(1); }).catch(() => process.exit(1));"; then
+    if curl --fail --silent --max-time 3 "$HEALTH_URL" >/dev/null \
+        || curl --fail --silent --max-time 3 "$LEGACY_HEALTH_URL" >/dev/null; then
         healthy=1
         break
     fi
@@ -146,7 +149,7 @@ done
 if [[ "$healthy" -ne 1 ]]; then
     podman logs --tail 100 "$CONTAINER_NAME" >&2 || true
     rollback
-    die "Health check failed inside container on port $APP_PORT"
+    die "Health check failed: $HEALTH_URL (legacy fallback: $LEGACY_HEALTH_URL)"
 fi
 
 printf '%s\n' "$remote_commit" > "$CURRENT_COMMIT_FILE"
