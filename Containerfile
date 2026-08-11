@@ -17,8 +17,10 @@ RUN npm run build
 FROM docker.io/library/node:22-bookworm-slim AS runner
 
 ENV NODE_ENV=production
+ENV NODE_OPTIONS=--max-old-space-size=512
 ENV HOSTNAME=0.0.0.0
 ENV PORT=4300
+
 
 WORKDIR /app
 RUN groupadd --system --gid 1001 nodejs \
